@@ -58,10 +58,14 @@ func main() {
 	clientset, err := kubernetes.NewForConfig(config)
 	factory := informers.NewSharedInformerFactory(clientset, 0)
 	informer := factory.Core().V1().Services().Informer()
+	epinformer := factory.Core().V1().Endpoints().Informer()
 
 	// Create a channel to stops the shared informer gracefully
 	stopper := make(chan struct{})
+	//epstopper := make(chan struct{})
+
 	defer close(stopper)
+	//defer close(epstopper)
 
 	// Kubernetes serves an utility to handle API crashes
 	defer runtime.HandleCrash()
@@ -77,8 +81,16 @@ func main() {
 		DeleteFunc: func(obj interface{}) { fmt.Println("Service Deleted", obj.(*v1.Service).Name) },
 	})
 
+	epinformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			fmt.Println("EPS Added", obj.(*v1.Endpoints).Name, obj.(*v1.Endpoints).Subsets)
+		},
+	})
+
 	// You need to start the informer, in my case, it runs in the background
 	go informer.Run(stopper)
+
+	go epinformer.Run(stopper)
 	<-stopper
 }
 

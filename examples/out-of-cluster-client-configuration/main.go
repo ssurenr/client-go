@@ -20,14 +20,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/clientcmd"
 	"os"
 	"path/filepath"
-	"time"
-
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 	//
 	// Uncomment to load all auth plugins
 	// _ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -56,35 +56,30 @@ func main() {
 
 	// create the clientset
 	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		panic(err.Error())
-	}
-	for {
-		pods, err := clientset.CoreV1().Pods("").List(metav1.ListOptions{})
-		if err != nil {
-			panic(err.Error())
-		}
-		fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
+	factory := informers.NewSharedInformerFactory(clientset, 0)
+	informer := factory.Core().V1().Services().Informer()
 
-		// Examples for error handling:
-		// - Use helper functions like e.g. errors.IsNotFound()
-		// - And/or cast to StatusError and use its properties like e.g. ErrStatus.Message
-		namespace := "default"
-		pod := "example-xxxxx"
-		_, err = clientset.CoreV1().Pods(namespace).Get(pod, metav1.GetOptions{})
-		if errors.IsNotFound(err) {
-			fmt.Printf("Pod %s in namespace %s not found\n", pod, namespace)
-		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			fmt.Printf("Error getting pod %s in namespace %s: %v\n",
-				pod, namespace, statusError.ErrStatus.Message)
-		} else if err != nil {
-			panic(err.Error())
-		} else {
-			fmt.Printf("Found pod %s in namespace %s\n", pod, namespace)
-		}
+	// Create a channel to stops the shared informer gracefully
+	stopper := make(chan struct{})
+	defer close(stopper)
 
-		time.Sleep(10 * time.Second)
-	}
+	// Kubernetes serves an utility to handle API crashes
+	defer runtime.HandleCrash()
+
+	// This is the part where your custom code gets triggered based on the
+	// event that the shared informer catches
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		// When a new pod gets created
+		AddFunc:    func(obj interface{}) { fmt.Println("Service Added", obj.(*v1.Service).Name) },
+		// When a pod gets updated
+		UpdateFunc: func(oldobj interface{}, newobj interface{}) { fmt.Println("Service Updated", oldobj.(*v1.Service).Name, " to ", newobj.(*v1.Service).Name) },
+		// When a pod gets deleted
+		DeleteFunc: func(obj interface{}) { fmt.Println("Service Deleted", obj.(*v1.Service).Name) },
+	})
+
+	// You need to start the informer, in my case, it runs in the background
+	go informer.Run(stopper)
+	<-stopper
 }
 
 func homeDir() string {

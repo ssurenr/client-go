@@ -74,7 +74,7 @@ func main() {
 	// event that the shared informer catches
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		// When a new pod gets created
-		AddFunc:    func(obj interface{}) { fmt.Println("Service Added", obj.(*v1.Service).Name) },
+		AddFunc:    func(obj interface{}) { fmt.Println("Service Added", obj.(*v1.Service).Name, "Labels: ", obj.(*v1.Service).ObjectMeta.Labels) },
 		// When a pod gets updated
 		UpdateFunc: func(oldobj interface{}, newobj interface{}) { fmt.Println("Service Updated", oldobj.(*v1.Service).Name, " to ", newobj.(*v1.Service).Name) },
 		// When a pod gets deleted
@@ -84,6 +84,12 @@ func main() {
 	epinformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			fmt.Println("EPS Added", obj.(*v1.Endpoints).Name, obj.(*v1.Endpoints).Subsets)
+		},
+		UpdateFunc: func(oldobj interface{}, obj interface{}) {
+				fmt.Println("EPS Updated", oldobj.(*v1.Endpoints).Name, obj.(*v1.Endpoints).Name)
+		},
+		DeleteFunc: func(obj interface{}) {
+			fmt.Println("EPS Deleted", obj.(*v1.Endpoints).Name, obj.(*v1.Endpoints).Subsets)
 		},
 	})
 

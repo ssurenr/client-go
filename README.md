@@ -9,6 +9,7 @@ will build `master`, which doesn't handle the dependencies well.
 [![BuildStatus Widget]][BuildStatus Result]
 [![GoReport Widget]][GoReport Status]
 [![GoDocWidget]][GoDocReference]
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fssurenr%2Fclient-go.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fssurenr%2Fclient-go?ref=badge_shield)
 
 [BuildStatus Result]: https://travis-ci.org/kubernetes/client-go
 [BuildStatus Widget]: https://travis-ci.org/kubernetes/client-go.svg?branch=master
@@ -192,3 +193,7 @@ For details on how to correctly use a dependency management for installing clien
 
 ### Contributing code
 Please send pull requests against the client packages in the Kubernetes main [repository](https://github.com/kubernetes/kubernetes). Changes in the staging area will be published to this repository every day.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fssurenr%2Fclient-go.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fssurenr%2Fclient-go?ref=badge_large)
